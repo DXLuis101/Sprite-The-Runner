@@ -39,6 +39,9 @@ public class BridgeSpawner : MonoBehaviour
     enDirection segNextDirection = enDirection.North;
     Transform playerTransform;
 
+    float segLength = 6.0f;
+    float segWidth = 3.0f;
+
     int segsOnScreen = 5;
     // Start is called before the first frame update
     void Start()
@@ -65,10 +68,20 @@ public class BridgeSpawner : MonoBehaviour
         switch (segCurrentDirection)
         {
             case enDirection.North:
-                //segment.segType = (enType)Random.Range(0, 3);
+                segment.segType = (enType)Random.Range(0, 3);
                 if(segment.segType == enType.Straight) { segment.segPrefab = bridgePrefabs[Random.Range(0, 6)]; }
                 else if(segment.segType == enType.L_Corner) { segment.segPrefab = bridgePrefabs[7]; }
                 else if(segment.segType == enType.R_Corner) { segment.segPrefab = bridgePrefabs[6]; }
+                break;
+            case enDirection.East:
+                segment.segType = (enType)Random.Range(0, 2);
+                if(segment.segType == enType.Straight) { segment.segPrefab = bridgePrefabs[Random.Range(0, 6)]; }
+                else if (segment.segType == enType.L_Corner) { segment.segPrefab = bridgePrefabs[7]; }
+                break;
+            case enDirection.West:
+                segment.segType = (enType)Random.Range(1, 3);
+                if (segment.segType == enType.Straight) { segment.segPrefab = bridgePrefabs[Random.Range(0, 6)]; }
+                else if (segment.segType == enType.R_Corner) { segment.segPrefab = bridgePrefabs[6]; }
                 break;
         }
     }
@@ -77,11 +90,24 @@ public class BridgeSpawner : MonoBehaviour
     {
         GameObject prefabToInstantiate = segment.segPrefab;
         Quaternion prefabRotation = Quaternion.identity;
+        Vector3 offset = new Vector3(0, 0, 0);
 
         switch (segCurrentDirection)
         {
             case enDirection.North:
-                if(segment.segType == enType.Straight) { prefabRotation = Quaternion.Euler(000, 000, 000); segNextDirection = enDirection.North; spawnCord.z += 6.0f;}
+                if (segment.segType == enType.Straight) { prefabRotation = Quaternion.Euler(000, 000, 000); segNextDirection = enDirection.North; spawnCord.z += segLength; }
+                else if (segment.segType == enType.R_Corner) { prefabRotation = Quaternion.Euler(000, 000, 000); segNextDirection = enDirection.East; spawnCord.z += segLength; offset.z += segLength + segWidth / 2; offset.x += segWidth / 2; }
+                else if (segment.segType == enType.L_Corner) { prefabRotation = Quaternion.Euler(000, 000, 000); segNextDirection = enDirection.West; spawnCord.z += segLength; offset.z += segLength + segWidth / 2; offset.x -= segWidth / 2; }
+                break;
+
+            case enDirection.East:
+                if (segment.segType == enType.Straight) { prefabRotation = Quaternion.Euler(000, 090, 000); segNextDirection = enDirection.East; spawnCord.x += segLength; }
+                else if (segment.segType == enType.L_Corner) { prefabRotation = Quaternion.Euler(000, 090, 000); segNextDirection = enDirection.North; spawnCord.x += segLength; offset.z += segWidth / 2; offset.x += segLength + segWidth / 2; }
+                break;
+
+            case enDirection.West:
+                if (segment.segType == enType.Straight) { prefabRotation = Quaternion.Euler(000,-090, 000); segNextDirection = enDirection.West; spawnCord.x -= segLength; }
+                else if (segment.segType == enType.R_Corner) { prefabRotation = Quaternion.Euler(000,-090, 000); segNextDirection = enDirection.North; spawnCord.x -= segLength; offset.z += segWidth / 2; offset.x -= segLength + segWidth / 2; }
                 break;
         }
 
@@ -93,6 +119,7 @@ public class BridgeSpawner : MonoBehaviour
         }
 
         segCurrentDirection = segNextDirection;
+        spawnCord += offset;
     }
 
     void RemoveSegments()
@@ -104,7 +131,7 @@ public class BridgeSpawner : MonoBehaviour
     {
         GameObject go = activeSegments[0];
 
-        if(Vector3.Distance(playerTransform.position, go.transform.position) > 12.0f)
+        if (Mathf.Abs(Vector3.Distance(playerTransform.position, go.transform.position)) > 15.0f)
         {
             CreateSegments();
             SpawnSegments();
