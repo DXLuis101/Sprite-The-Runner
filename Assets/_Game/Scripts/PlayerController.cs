@@ -11,7 +11,7 @@ public class PlayerController : MonoBehaviour
     enDirection playerDirection = enDirection.North;
     enDirection playerNextDirection = enDirection.North;
 
-    float playerStartSpeed = 1.0f;
+    float playerStartSpeed = 10.0f;
     float playerSpeed; // player's speed
     float gValue = 10.0f;
     float translationfactor = 10.0f;
