@@ -11,12 +11,16 @@ public class PlayerController : MonoBehaviour
     enDirection playerDirection = enDirection.North;
     enDirection playerNextDirection = enDirection.North;
     Animator anim;
+    BridgeSpawner bridgeSpawner;
 
     float playerStartSpeed = 10.0f;
     float playerSpeed; // player's speed
     float gValue = 10.0f;
     float translationfactor = 10.0f;
     float jumpForce = 1.5f;
+    bool canTurnRight = false;
+    bool canTurnLeft = false;
+    bool isDead = false;
 
     // Start is called before the first frame update
     void Start()
@@ -24,6 +28,7 @@ public class PlayerController : MonoBehaviour
         playerSpeed = playerStartSpeed;
         characterController = this.GetComponent<CharacterController>();
         anim = this.GetComponent<Animator>();
+        bridgeSpawner = GameObject.Find("BridgeManager").GetComponent<BridgeSpawner>();
         playerVector = new Vector3(0, 0, 1) * playerSpeed * Time.deltaTime;
     }
 
@@ -35,9 +40,14 @@ public class PlayerController : MonoBehaviour
 
     void PlayerLogic()
     {
+        if (isDead)
+            return;
+
+        if (!characterController.enabled) { characterController.enabled = true; }
+
         playerSpeed += 0.005f * Time.deltaTime;
 
-        if (Input.GetKeyDown(KeyCode.G))
+        if (Input.GetKeyDown(KeyCode.G) && canTurnRight)
         {
             switch (playerDirection)
             {
@@ -51,7 +61,7 @@ public class PlayerController : MonoBehaviour
                     break;
             }
         }
-        else if (Input.GetKeyDown(KeyCode.F))
+        else if (Input.GetKeyDown(KeyCode.F) && canTurnLeft)
         {
             switch (playerDirection)
             {
@@ -101,6 +111,12 @@ public class PlayerController : MonoBehaviour
             anim.SetTrigger("isJumping");
             playerVector.y = Mathf.Sqrt(jumpForce * gValue);
         }
+
+        if(this.transform.position.y < -0.5f)
+        {
+            isDead = true;
+            anim.SetTrigger("isTripping");
+        }
         characterController.Move(playerVector);
     }
 
@@ -120,5 +136,53 @@ public class PlayerController : MonoBehaviour
         characterController.height = 2.0f;
         characterController.center = new Vector3(0, 1.0f, 0);
         characterController.radius = 0.2f;
+    }
+
+    void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        if(hit.gameObject.tag == "LCorner")
+        {
+            canTurnLeft = true;
+        }
+        else if(hit.gameObject.tag == "RCorner")
+        {
+            canTurnRight = true;
+        }
+        else
+        {
+            canTurnLeft = false;
+            canTurnRight = false;
+        }
+
+        if(hit.gameObject.tag == "Obstacle")
+        {
+            isDead = true;
+            anim.SetTrigger("isTripping");
+        }
+    }
+
+    private void OnGUI()
+    {
+        if (isDead)
+        {
+            if (GUI.Button(new Rect(0.4f * Screen.width, 0.6f * Screen.width, 0.2f * Screen.width, 0.1f * Screen.height), "RESPAWN"))
+            {
+                DeathEvent();
+            }
+        }
+    }
+
+    void DeathEvent()
+    {
+        characterController.enabled = false;
+        this.transform.position = Vector3.zero;
+        this.transform.rotation = Quaternion.Euler(000, 000, 000);
+        playerDirection = enDirection.North;
+        playerNextDirection = enDirection.North;
+        playerSpeed = playerStartSpeed;
+        playerVector = Vector3.forward * playerSpeed * Time.deltaTime;
+        bridgeSpawner.CleanTheScene();
+        anim.SetTrigger("isSpawned");
+        isDead = false;
     }
 }

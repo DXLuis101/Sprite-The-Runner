@@ -43,6 +43,8 @@ public class BridgeSpawner : MonoBehaviour
     float segWidth = 3.0f;
 
     int segsOnScreen = 5;
+    bool stopGame = false;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -129,6 +131,9 @@ public class BridgeSpawner : MonoBehaviour
     }
     void PlayerTrigger()
     {
+        if (stopGame)
+            return;
+
         GameObject go = activeSegments[0];
 
         if (Mathf.Abs(Vector3.Distance(playerTransform.position, go.transform.position)) > 15.0f)
@@ -137,5 +142,22 @@ public class BridgeSpawner : MonoBehaviour
             SpawnSegments();
             RemoveSegments();
         }
+    }
+
+    public void CleanTheScene()
+    {
+        stopGame = true;
+        for(int j = activeSegments.Count -1; j>=0; j--)
+        {
+            Destroy(activeSegments[j]);
+            activeSegments.RemoveAt(j);
+        }
+
+        spawnCord = new Vector3(0, 0, -6);
+        segCurrentDirection = enDirection.North;
+        segNextDirection = enDirection.North;
+        segment = new Segments(bridgePrefabs[0], enType.Straight);
+        InitializeSegments();
+        stopGame = false;
     }
 }
