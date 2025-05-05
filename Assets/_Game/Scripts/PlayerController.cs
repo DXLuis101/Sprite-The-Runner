@@ -1,10 +1,18 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
     enum enDirection { North, East, West};
+    public AudioClip[] soundFXClips;
+    public Text distanceScoreText;
+    public Text coinScoreText;
+    public Text bestDistanceScoreText;
+    public Text bestCoinScoreText;
+    public GameObject deathMenu;
 
     CharacterController characterController;
     Vector3 playerVector; // player's direction
@@ -12,12 +20,19 @@ public class PlayerController : MonoBehaviour
     enDirection playerNextDirection = enDirection.North;
     Animator anim;
     BridgeSpawner bridgeSpawner;
+    AudioSource audioSource;
 
+    int coinsCollected = 0;
+    int coinsCollectedBest;
+    int distanceRun = 0;
+    int distanceRunBest;
     float playerStartSpeed = 10.0f;
     float playerSpeed; // player's speed
     float gValue = 10.0f;
     float translationfactor = 10.0f;
     float jumpForce = 1.5f;
+    float timer = 0;
+    float distance = 0;
     bool canTurnRight = false;
     bool canTurnLeft = false;
     bool isDead = false;
@@ -29,13 +44,19 @@ public class PlayerController : MonoBehaviour
         characterController = this.GetComponent<CharacterController>();
         anim = this.GetComponent<Animator>();
         bridgeSpawner = GameObject.Find("BridgeManager").GetComponent<BridgeSpawner>();
+        audioSource = this.GetComponent<AudioSource>();
         playerVector = new Vector3(0, 0, 1) * playerSpeed * Time.deltaTime;
+        deathMenu.SetActive(false);
+        distanceRunBest = PlayerPrefs.GetInt("highscoreD");
+        coinsCollectedBest = PlayerPrefs.GetInt("highscoreC");
     }
 
     // Update is called once per frame
     void Update()
     {
         PlayerLogic();
+        distanceScoreText.text = "Distance: " + distanceRun.ToString();
+        coinScoreText.text = "Coins: " + coinsCollected.ToString();
     }
 
     void PlayerLogic()
@@ -44,8 +65,9 @@ public class PlayerController : MonoBehaviour
             return;
 
         if (!characterController.enabled) { characterController.enabled = true; }
+        timer += Time.deltaTime;
 
-        playerSpeed += 0.005f * Time.deltaTime;
+        playerSpeed += 0.1f * Time.deltaTime;
 
         if (Input.GetKeyDown(KeyCode.G) && canTurnRight)
         {
@@ -60,6 +82,8 @@ public class PlayerController : MonoBehaviour
                     this.transform.rotation = Quaternion.Euler(000, 000, 000);
                     break;
             }
+
+            audioSource.PlayOneShot(soundFXClips[6], 0.4f); ;
         }
         else if (Input.GetKeyDown(KeyCode.F) && canTurnLeft)
         {
@@ -74,6 +98,8 @@ public class PlayerController : MonoBehaviour
                     this.transform.rotation = Quaternion.Euler(000, 000, 000);
                     break;
             }
+
+            audioSource.PlayOneShot(soundFXClips[6], 0.4f); ;
         }
 
         playerDirection = playerNextDirection;
@@ -108,6 +134,7 @@ public class PlayerController : MonoBehaviour
 
         if(Input.GetKeyDown(KeyCode.Space))
         {
+            audioSource.PlayOneShot(soundFXClips[3], 0.4f); ;
             anim.SetTrigger("isJumping");
             playerVector.y = Mathf.Sqrt(jumpForce * gValue);
         }
@@ -115,9 +142,12 @@ public class PlayerController : MonoBehaviour
         if(this.transform.position.y < -0.5f)
         {
             isDead = true;
+            audioSource.PlayOneShot(soundFXClips[2], 0.4f); ;
             anim.SetTrigger("isTripping");
         }
         characterController.Move(playerVector);
+        distance = playerSpeed * timer;
+        distanceRun = (int)distance;
     }
 
     void DoSliding()
@@ -126,6 +156,7 @@ public class PlayerController : MonoBehaviour
         characterController.center = new Vector3(0, 0.5f, 0);
         characterController.radius = 0;
         StartCoroutine(ReEnableCC());
+        audioSource.PlayOneShot(soundFXClips[5], 0.4f); ;
         anim.SetTrigger("isSliding");
     }
 
@@ -157,7 +188,9 @@ public class PlayerController : MonoBehaviour
         if(hit.gameObject.tag == "Obstacle")
         {
             isDead = true;
+            audioSource.PlayOneShot(soundFXClips[1], 0.4f);
             anim.SetTrigger("isTripping");
+            SavedScore();
         }
     }
 
@@ -165,24 +198,75 @@ public class PlayerController : MonoBehaviour
     {
         if (isDead)
         {
-            if (GUI.Button(new Rect(0.4f * Screen.width, 0.6f * Screen.width, 0.2f * Screen.width, 0.1f * Screen.height), "RESPAWN"))
-            {
-                DeathEvent();
-            }
+            deathMenu.SetActive(true);
         }
     }
 
-    void DeathEvent()
+    public void DeathEvent()
     {
+        deathMenu.SetActive(false);
+        bestCoinScoreText.text = "";
+        bestDistanceScoreText.text = "";
         characterController.enabled = false;
-        this.transform.position = Vector3.zero;
+        this.transform.position = new Vector3(0,2,0);
         this.transform.rotation = Quaternion.Euler(000, 000, 000);
         playerDirection = enDirection.North;
         playerNextDirection = enDirection.North;
         playerSpeed = playerStartSpeed;
         playerVector = Vector3.forward * playerSpeed * Time.deltaTime;
         bridgeSpawner.CleanTheScene();
+        coinsCollected = 0;
+        timer = 0;
         anim.SetTrigger("isSpawned");
         isDead = false;
+    }
+
+    void FootstepEvent()
+    {
+        audioSource.PlayOneShot(soundFXClips[0], 0.4f);
+    }
+
+    void FootstepEventB()
+    {
+        audioSource.PlayOneShot(soundFXClips[0], 0.4f);
+    }
+
+    void JumpLandEvent()
+    {
+        audioSource.PlayOneShot(soundFXClips[4], 0.4f);
+    }
+
+    void OnTriggerEnter(Collider col)
+    {
+        if(col.gameObject.tag == "Coin")
+        {
+            Destroy(col.gameObject);
+            audioSource.PlayOneShot(soundFXClips[7], 0.4f);
+            coinsCollected += 1;
+        }
+    }
+
+    void SavedScore()
+    {
+        if(coinsCollected > coinsCollectedBest)
+        {
+            coinsCollectedBest = coinsCollected;
+            PlayerPrefs.SetInt("highscoreC", coinsCollectedBest);
+            PlayerPrefs.Save();
+            bestCoinScoreText.text = "Congrats! Your new coin score is: " + coinsCollectedBest.ToString();
+        }
+
+        if(distanceRun > distanceRunBest)
+        {
+            distanceRunBest = distanceRun;
+            PlayerPrefs.SetInt("highscoreD", distanceRunBest);
+            PlayerPrefs.Save();
+            bestDistanceScoreText.text = "Radical! Your new distance score is: " + distanceRunBest.ToString() + "M";
+        }
+    }
+
+    public void ExitApp()
+    {
+        SceneManager.LoadScene("MainMenu");
     }
 }

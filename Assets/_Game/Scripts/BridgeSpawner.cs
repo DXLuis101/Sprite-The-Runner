@@ -71,19 +71,19 @@ public class BridgeSpawner : MonoBehaviour
         {
             case enDirection.North:
                 segment.segType = (enType)Random.Range(0, 3);
-                if(segment.segType == enType.Straight) { segment.segPrefab = bridgePrefabs[Random.Range(0, 6)]; }
-                else if(segment.segType == enType.L_Corner) { segment.segPrefab = bridgePrefabs[7]; }
-                else if(segment.segType == enType.R_Corner) { segment.segPrefab = bridgePrefabs[6]; }
+                if(segment.segType == enType.Straight) { segment.segPrefab = bridgePrefabs[Random.Range(0, 9)]; }
+                else if(segment.segType == enType.L_Corner) { segment.segPrefab = bridgePrefabs[10]; }
+                else if(segment.segType == enType.R_Corner) { segment.segPrefab = bridgePrefabs[9]; }
                 break;
             case enDirection.East:
                 segment.segType = (enType)Random.Range(0, 2);
-                if(segment.segType == enType.Straight) { segment.segPrefab = bridgePrefabs[Random.Range(0, 6)]; }
-                else if (segment.segType == enType.L_Corner) { segment.segPrefab = bridgePrefabs[7]; }
+                if(segment.segType == enType.Straight) { segment.segPrefab = bridgePrefabs[Random.Range(0, 9)]; }
+                else if (segment.segType == enType.L_Corner) { segment.segPrefab = bridgePrefabs[10]; }
                 break;
             case enDirection.West:
                 segment.segType = (enType)Random.Range(1, 3);
-                if (segment.segType == enType.Straight) { segment.segPrefab = bridgePrefabs[Random.Range(0, 6)]; }
-                else if (segment.segType == enType.R_Corner) { segment.segPrefab = bridgePrefabs[6]; }
+                if (segment.segType == enType.Straight) { segment.segPrefab = bridgePrefabs[Random.Range(0, 9)]; }
+                else if (segment.segType == enType.R_Corner) { segment.segPrefab = bridgePrefabs[9]; }
                 break;
         }
     }
